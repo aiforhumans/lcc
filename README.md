@@ -1,6 +1,29 @@
 # Local Chat Companion
 
-A privacy-focused local chat assistant with adaptive memory and learning capabilities, designed to work with LM Studio and local language models.
+A privacy-focused local chat assistant with adaptive memory and learni8. **Run the Application**
+   ```bash
+   python main.py
+   ```
+
+### Quick Start (Minimal Setup)
+
+For a quick test with minimal dependencies:
+
+```bash
+# Create Python 3.12 virtual environment
+py -3.12 -m venv venv
+venv\Scripts\activate  # Windows
+# source venv/bin/activate  # Linux/Mac
+
+# Install only core dependencies
+pip install python-dotenv pydantic pydantic-settings httpx rich
+
+# Test the application
+python main.py --version
+python main.py --help
+```
+
+This minimal setup provides the core chat functionality. Install additional dependencies as needed for advanced features.apabilities, designed to work with LM Studio and local language models.
 
 ## 🎯 Vision
 
@@ -36,7 +59,7 @@ Create an intelligent, privacy-focused chat companion that learns and adapts to 
 
 ### Prerequisites
 
-- Python 3.8 or higher
+- Python 3.12 or higher (recommended: Python 3.12)
 - [LM Studio](https://lmstudio.ai/) installed and running
 - A local language model loaded in LM Studio
 
@@ -48,21 +71,36 @@ Create an intelligent, privacy-focused chat companion that learns and adapts to 
    cd local-chat-companion
    ```
 
-2. **Create Virtual Environment**
+2. **Create Virtual Environment with Python 3.12**
    ```bash
-   python -m venv venv
-   # Windows
+   # Windows (using py launcher)
+   py -3.12 -m venv venv
    venv\Scripts\activate
+   
    # Linux/Mac
+   python3.12 -m venv venv
    source venv/bin/activate
    ```
 
-3. **Install Dependencies**
+3. **Install Core Dependencies**
    ```bash
-   pip install -r requirements.txt
+   pip install --upgrade pip
+   pip install python-dotenv pydantic pydantic-settings httpx rich
    ```
 
-4. **Configure Environment**
+4. **Install Optional Dependencies (as needed)**
+   ```bash
+   # For full functionality (recommended)
+   pip install -r requirements.txt
+   
+   # Or install specific feature sets:
+   pip install structlog loguru  # Enhanced logging
+   pip install typer click       # Advanced CLI features
+   pip install fastapi uvicorn   # Web interface
+   pip install pytest pytest-cov # Testing
+   ```
+
+5. **Configure Environment**
    ```bash
    # Copy the template and edit with your settings
    copy .env.template .env
