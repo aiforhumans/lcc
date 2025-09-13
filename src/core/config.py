@@ -10,8 +10,19 @@ from typing import Optional, List, Any, Dict
 from dataclasses import dataclass, field
 from enum import Enum
 
-from pydantic import BaseSettings, validator, Field
-from pydantic_settings import BaseSettings as PydanticBaseSettings
+try:
+    # Try Pydantic v2 first
+    from pydantic_settings import BaseSettings
+    from pydantic import Field, field_validator
+    PYDANTIC_V2 = True
+except ImportError:
+    try:
+        # Fallback to Pydantic v1
+        from pydantic import BaseSettings, validator, Field
+        field_validator = validator
+        PYDANTIC_V2 = False
+    except ImportError:
+        raise ImportError("Neither pydantic v2 with pydantic-settings nor pydantic v1 is available")
 
 
 class AppMode(str, Enum):
@@ -49,7 +60,7 @@ class PersonalityStyle(str, Enum):
     CUSTOM = "custom"
 
 
-class Config(PydanticBaseSettings):
+class Config(BaseSettings):
     """Main configuration class for the Local Chat Companion."""
     
     # Application settings
@@ -133,34 +144,35 @@ class Config(PydanticBaseSettings):
     backup_path: str = Field(default="data/backups/", env="BACKUP_PATH")
     export_formats: List[str] = Field(default=["json", "txt", "markdown"], env="EXPORT_FORMATS")
     
-    class Config:
-        """Pydantic configuration."""
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        case_sensitive = False
+    # Pydantic v2 configuration
+    model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "case_sensitive": False}
         
-    @validator("export_formats", pre=True)
+    @field_validator("export_formats", mode="before")
+    @classmethod
     def parse_export_formats(cls, v):
         """Parse comma-separated export formats."""
         if isinstance(v, str):
             return [fmt.strip() for fmt in v.split(",")]
         return v
     
-    @validator("temperature")
+    @field_validator("temperature")
+    @classmethod
     def validate_temperature(cls, v):
         """Validate temperature is between 0 and 2."""
         if not 0 <= v <= 2:
             raise ValueError("Temperature must be between 0 and 2")
         return v
     
-    @validator("top_p")
+    @field_validator("top_p")
+    @classmethod
     def validate_top_p(cls, v):
         """Validate top_p is between 0 and 1."""
         if not 0 <= v <= 1:
             raise ValueError("top_p must be between 0 and 1")
         return v
     
-    @validator("memory_importance_threshold")
+    @field_validator("memory_importance_threshold")
+    @classmethod
     def validate_memory_threshold(cls, v):
         """Validate memory importance threshold is between 0 and 1."""
         if not 0 <= v <= 1:

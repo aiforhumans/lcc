@@ -117,7 +117,8 @@ class ConversationManager(LoggerMixin):
         self.sessions_dir = Path(config.sqlite_db_path).parent / "sessions"
         self.sessions_dir.mkdir(parents=True, exist_ok=True)
         
-        self.logger.info(
+        self.log_with_context(
+            "info",
             "Conversation manager initialized",
             sessions_dir=str(self.sessions_dir),
             max_session_memory=config.max_session_memory
@@ -308,7 +309,7 @@ class ConversationManager(LoggerMixin):
             try:
                 self.save_conversation()
             except Exception as e:
-                self.logger.error("Auto-save failed", error=str(e))
+                self.log_with_context("error", "Auto-save failed", error=str(e))
     
     def _get_default_system_prompt(self, style: str) -> str:
         """Get the default system prompt based on personality style."""

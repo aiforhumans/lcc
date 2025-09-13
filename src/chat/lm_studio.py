@@ -11,7 +11,15 @@ from dataclasses import dataclass, field
 from enum import Enum
 
 import httpx
-import structlog
+
+# Optional import with fallback
+try:
+    import structlog
+    STRUCTLOG_AVAILABLE = True
+except ImportError:
+    import logging
+    structlog = logging
+    STRUCTLOG_AVAILABLE = False
 
 from ..core.config import Config
 from ..core.logging_config import LoggerMixin
@@ -112,7 +120,8 @@ class LMStudioClient(LoggerMixin):
         self.timeout = httpx.Timeout(30.0, connect=5.0)
         self.client = None
         
-        self.logger.info(
+        self.log_with_context(
+            "info",
             "LM Studio client initialized",
             base_url=self.base_url,
             native_api_base=self.native_api_base,
@@ -180,11 +189,12 @@ class LMStudioClient(LoggerMixin):
             return result
             
         except httpx.ConnectError as e:
-            self.logger.error("Failed to connect to LM Studio", error=str(e))
+            self.log_with_context("error", "Failed to connect to LM Studio", error=str(e))
             raise ConnectionError(f"Could not connect to LM Studio at {url}. Is LM Studio running?") from e
         
         except httpx.HTTPStatusError as e:
-            self.logger.error(
+            self.log_with_context(
+                "error",
                 "HTTP error from LM Studio",
                 status_code=e.response.status_code,
                 response_text=e.response.text
@@ -192,11 +202,11 @@ class LMStudioClient(LoggerMixin):
             raise LMStudioError(f"HTTP {e.response.status_code}: {e.response.text}") from e
         
         except json.JSONDecodeError as e:
-            self.logger.error("Invalid JSON response from LM Studio", error=str(e))
+            self.log_with_context("error", "Invalid JSON response from LM Studio", error=str(e))
             raise LMStudioError("Invalid JSON response from LM Studio") from e
         
         except Exception as e:
-            self.logger.error("Unexpected error in LM Studio request", error=str(e), exc_info=True)
+            self.log_with_context("error", "Unexpected error in LM Studio request", error=str(e), exc_info=True)
             raise LMStudioError(f"Unexpected error: {e}") from e
     
     async def list_models(self) -> List[ModelInfo]:
@@ -222,7 +232,7 @@ class LMStudioClient(LoggerMixin):
             return models
             
         except Exception as e:
-            self.logger.error("Failed to list models", error=str(e))
+            self.log_with_context("error", "Failed to list models", error=str(e))
             raise
     
     async def get_model_info(self, model_id: str) -> ModelInfo:
@@ -241,11 +251,11 @@ class LMStudioClient(LoggerMixin):
                 format=response.get("format", "")
             )
             
-            self.logger.debug(f"Retrieved info for model {model_id}", model_state=model.state)
+            self.log_with_context("debug", f"Retrieved info for model {model_id}", model_state=model.state)
             return model
             
         except Exception as e:
-            self.logger.error(f"Failed to get model info for {model_id}", error=str(e))
+            self.log_with_context("error", f"Failed to get model info for {model_id}", error=str(e))
             raise
     
     async def chat_completion(
@@ -363,7 +373,7 @@ class LMStudioClient(LoggerMixin):
                 "available_models": [m.id for m in loaded_models]
             }
             
-            self.logger.info("LM Studio health check passed", **health_info)
+            self.log_with_context("info", "LM Studio health check passed", **health_info)
             return health_info
             
         except Exception as e:
@@ -371,7 +381,7 @@ class LMStudioClient(LoggerMixin):
                 "status": "unhealthy",
                 "error": str(e)
             }
-            self.logger.error("LM Studio health check failed", **health_info)
+            self.log_with_context("error", "LM Studio health check failed", **health_info)
             return health_info
     
     async def ensure_model_loaded(self, model_id: Optional[str] = None) -> bool:
@@ -388,5 +398,5 @@ class LMStudioClient(LoggerMixin):
                 return False
                 
         except Exception as e:
-            self.logger.error(f"Could not check model status for {model_id}", error=str(e))
+            self.log_with_context("error", f"Could not check model status for {model_id}", error=str(e))
             return False
